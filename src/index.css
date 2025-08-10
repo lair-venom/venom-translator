@@ -26,38 +26,6 @@
   scrollbar-color: #FFA366 #1a1a1a;
 }
 
-/* Исправленные стили для выпадающего меню */
-.dropdown {
-  @apply absolute z-50 mt-2 w-56;
-  @apply bg-gray-900 bg-opacity-90 backdrop-blur-sm;
-  @apply border border-gray-700 rounded-lg shadow-xl;
-  @apply overflow-hidden;
-  animation: dropdownFadeIn 0.3s ease-out forwards;
-}
-
-.dropdown-item {
-  @apply block px-4 py-3 text-sm text-gray-200;
-  @apply hover:bg-gray-800 hover:bg-opacity-50 transition-colors;
-  @apply border-b border-gray-800 last:border-b-0;
-}
-
-.dropdown-item:focus {
-  @apply outline-none bg-gray-800 bg-opacity-70;
-}
-
-/* Новая анимация вместо slideInRight */
-@keyframes dropdownFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Остальные ваши оригинальные стили остаются без изменений */
 /* Custom animations */
 @keyframes glow {
   0%, 100% {
@@ -77,7 +45,164 @@
   }
 }
 
-/* ... все остальные ваши оригинальные анимации ... */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes spinSlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulseRing {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes floatGentle {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-3px) rotate(1deg);
+  }
+  66% {
+    transform: translateY(2px) rotate(-1deg);
+  }
+}
+
+@keyframes lightning {
+  0%, 90%, 100% {
+    transform: scale(1) rotate(0deg);
+    filter: brightness(1);
+  }
+  5% {
+    transform: scale(1.1) rotate(5deg);
+    filter: brightness(1.5);
+  }
+  10% {
+    transform: scale(0.95) rotate(-3deg);
+    filter: brightness(1.2);
+  }
+}
+
+@keyframes orbit1 {
+  from {
+    transform: rotate(0deg) translateX(50px) rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg) translateX(50px) rotate(-360deg);
+  }
+}
+
+@keyframes orbit2 {
+  from {
+    transform: rotate(120deg) translateX(45px) rotate(-120deg);
+  }
+  to {
+    transform: rotate(480deg) translateX(45px) rotate(-480deg);
+  }
+}
+
+@keyframes orbit3 {
+  from {
+    transform: rotate(240deg) translateX(40px) rotate(-240deg);
+  }
+  to {
+    transform: rotate(600deg) translateX(40px) rotate(-600deg);
+  }
+}
+
+@keyframes textShimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@keyframes glowText {
+  0%, 100% {
+    text-shadow: 0 0 5px #FFA366, 0 0 10px #FFA366;
+  }
+  50% {
+    text-shadow: 0 0 10px #FFA366, 0 0 20px #FFA366, 0 0 30px #FF8533;
+  }
+}
+
+@keyframes lineExpand {
+  0% {
+    width: 0;
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    width: 4rem;
+    opacity: 0.8;
+  }
+}
 
 .animate-glow {
   animation: glow 3s ease-in-out infinite;
@@ -87,19 +212,95 @@
   animation: float 6s ease-in-out infinite;
 }
 
-/* ... все остальные ваши оригинальные классы анимаций ... */
+.animate-spin-slow {
+  animation: spinSlow 8s linear infinite;
+}
+
+.animate-pulse-ring {
+  animation: pulseRing 3s ease-in-out infinite;
+}
+
+.animate-glow-pulse {
+  animation: glowPulse 4s ease-in-out infinite;
+}
+
+.animate-float-gentle {
+  animation: floatGentle 6s ease-in-out infinite;
+}
+
+.animate-lightning {
+  animation: lightning 4s ease-in-out infinite;
+}
+
+.animate-orbit-1 {
+  animation: orbit1 12s linear infinite;
+}
+
+.animate-orbit-2 {
+  animation: orbit2 15s linear infinite;
+}
+
+.animate-orbit-3 {
+  animation: orbit3 18s linear infinite;
+}
+
+.animate-text-shimmer {
+  background-size: 200% auto;
+  animation: textShimmer 3s ease-in-out infinite;
+}
+
+.animate-glow-text {
+  animation: glowText 2s ease-in-out infinite;
+}
+
+.animate-line-expand {
+  animation: lineExpand 2s ease-in-out infinite;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.5s ease-out;
+}
+
+.animate-slide-out-right {
+  animation: slideOutRight 0.5s ease-in;
+}
+
+.animate-pulse-custom {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 163, 102, 0.2), transparent);
+  animation: shimmer 2s infinite;
+}
 
 /* Glass morphism effect */
 .glass {
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(10px);
+ /* border: 1px solid rgba(255, 163, 102, 0.2); */
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), 
               inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 /* Hover effects */
 .hover-glow:hover {
+ /* box-shadow: 0 0 25px rgba(255, 163, 102, 0.4),
+              0 0 50px rgba(255, 163, 102, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.15); */
   transform: translateY(-2px);
+  border-color: rgba(255, 163, 102, 0.4);
   transition: all 0.3s ease;
 }
 
