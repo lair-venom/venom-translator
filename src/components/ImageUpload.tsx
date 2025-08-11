@@ -46,7 +46,6 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 
   const handlePasteFromClipboard = async () => {
     try {
-      // Проверяем поддержку Clipboard API
       if (!navigator.clipboard || !navigator.clipboard.read) {
         throw new Error('Clipboard API не поддерживается в этом браузере');
       }
@@ -77,23 +76,24 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
           Изображение для перевода
         </label>
         <div className="relative glass rounded-lg p-4 hover-glow">
-        <div className="relative glass-border rounded-lg p-4 hover-glow">
-          <button
-            onClick={onClearImage}
-            className="absolute top-2 right-2 z-10 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-          <img
-            src={currentImage}
-            alt="Uploaded"
-            className="w-full max-h-64 object-contain rounded"
-          />
-          {loading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-400"></div>
-            </div>
-          )}
+          <div className="relative glass-border rounded-lg p-4 hover-glow">
+            <button
+              onClick={onClearImage}
+              className="absolute top-2 right-2 z-10 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <img
+              src={currentImage}
+              alt="Uploaded"
+              className="w-full max-h-64 object-contain rounded"
+            />
+            {loading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-400"></div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -150,6 +150,3 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     </div>
   );
 };
-    )
-  }
-}
