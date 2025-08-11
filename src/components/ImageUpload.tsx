@@ -77,6 +77,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
           Изображение для перевода
         </label>
         <div className="relative glass rounded-lg p-4 hover-glow">
+        <div className="relative glass-border rounded-lg p-4 hover-glow">
           <button
             onClick={onClearImage}
             className="absolute top-2 right-2 z-10 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
@@ -104,7 +105,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         Загрузить изображение
       </label>
       <div
-        className={`glass rounded-lg border-2 border-dashed transition-all cursor-pointer hover-glow ${
+        className={`glass-border rounded-lg border-2 border-dashed transition-all cursor-pointer hover-glow ${
           dragOver ? 'border-orange-400 bg-orange-400 bg-opacity-10' : 'border-gray-600'
         }`}
         onDragOver={handleDragOver}
@@ -131,7 +132,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
                 e.stopPropagation();
                 handlePasteFromClipboard();
               }}
-              className="inline-flex items-center px-4 py-2 glass text-orange-400 rounded-lg hover:bg-orange-400 hover:bg-opacity-20 transition-all"
+              className="inline-flex items-center px-4 py-2 glass-border text-orange-400 rounded-lg hover:bg-orange-400 hover:bg-opacity-20 transition-all"
             >
               <Clipboard className="w-4 h-4 mr-2" />
               Из буфера

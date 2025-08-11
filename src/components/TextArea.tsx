@@ -28,7 +28,7 @@ export const TextArea: React.FC<TextAreaProps> = ({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           readOnly={readonly}
-          className="w-full h-40 glass rounded-lg p-4 text-white focus-orange border-0 resize-none hover-glow transition-all"
+          className="w-full h-40 glass-border rounded-lg p-4 text-white focus-orange border-0 resize-none hover-glow transition-all"
           style={{ minHeight: '160px' }}
         />
         {loading && (

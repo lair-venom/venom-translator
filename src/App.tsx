@@ -131,7 +131,7 @@ function App() {
           </div>
 
           {/* Language Selection */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <LanguageSelect
               value={fromLanguage}
               onChange={setFromLanguage}
@@ -139,17 +139,17 @@ function App() {
               label="Исходный язык"
             />
             
-            <div className="flex justify-center items-end pb-2">
+            <div className="flex justify-center items-end pb-4">
               <button
                 onClick={handleSwapLanguages}
                 disabled={fromLanguage === 'auto'}
-                className={`p-3 rounded-full transition-all ${
+                className={`p-4 rounded-full transition-all ${
                   fromLanguage === 'auto' 
-                    ? 'glass text-gray-500 cursor-not-allowed' 
-                    : 'glass hover:bg-orange-400 hover:bg-opacity-20 text-orange-400 hover-glow'
+                    ? 'glass-border text-gray-500 cursor-not-allowed' 
+                    : 'glass-border hover:bg-orange-400 hover:bg-opacity-20 text-orange-400 hover-glow'
                 }`}
               >
-                <ArrowRightLeft className="w-5 h-5" />
+                <ArrowRightLeft className="w-6 h-6" />
               </button>
             </div>
 
@@ -183,7 +183,7 @@ function App() {
                 {translatedText && (
                   <button
                     onClick={() => handleCopyToClipboard(translatedText)}
-                    className="absolute top-8 right-3 p-2 glass rounded-lg hover:bg-orange-400 hover:bg-opacity-20 text-orange-400 transition-all"
+                    className="absolute top-8 right-3 p-2 glass-border rounded-lg hover:bg-orange-400 hover:bg-opacity-20 text-orange-400 transition-all"
                   >
                     <Copy className="w-4 h-4" />
                   </button>
@@ -221,7 +221,7 @@ function App() {
                     {translatedText && (
                       <button
                         onClick={() => handleCopyToClipboard(translatedText)}
-                        className="absolute top-8 right-3 p-2 glass rounded-lg hover:bg-orange-400 hover:bg-opacity-20 text-orange-400 transition-all"
+                        className="absolute top-8 right-3 p-2 glass-border rounded-lg hover:bg-orange-400 hover:bg-opacity-20 text-orange-400 transition-all"
                       >
                         <Copy className="w-4 h-4" />
                       </button>
@@ -246,7 +246,7 @@ function App() {
             
             <button
               onClick={handleClearAll}
-              className="px-6 py-3 glass text-gray-300 rounded-lg hover:bg-gray-700 hover:bg-opacity-50 transition-all hover-glow"
+              className="px-6 py-3 glass-border text-gray-300 rounded-lg hover:bg-gray-700 hover:bg-opacity-50 transition-all hover-glow"
             >
               <RotateCcw className="w-4 h-4 mr-2 inline" />
               Очистить
@@ -254,7 +254,7 @@ function App() {
             
             <button
               onClick={() => setShowHistory(!showHistory)}
-              className="px-6 py-3 glass text-gray-300 rounded-lg hover:bg-gray-700 hover:bg-opacity-50 transition-all hover-glow"
+              className="px-6 py-3 glass-border text-gray-300 rounded-lg hover:bg-gray-700 hover:bg-opacity-50 transition-all hover-glow"
             >
               <History className="w-4 h-4 mr-2 inline" />
               История
@@ -263,7 +263,7 @@ function App() {
 
           {/* History */}
           {showHistory && history.length > 0 && (
-            <div className="glass rounded-lg p-6">
+            <div className="glass-border rounded-lg p-6">
               <h3 className="text-xl font-semibold text-white mb-4">История переводов</h3>
               <div className="flex justify-between items-center mb-4">
                 <span className="text-sm text-gray-400">
@@ -278,7 +278,7 @@ function App() {
               </div>
               <div className="space-y-4 max-h-96 overflow-y-auto">
                 {history.map((item) => (
-                  <div key={item.id} className="glass rounded-lg p-4 hover-glow">
+                  <div key={item.id} className="glass-border rounded-lg p-4 hover-glow">
                     <div className="flex justify-between items-start mb-2">
                       <span className="text-sm text-orange-400">
                         {item.fromLanguage.toUpperCase()} → {item.toLanguage.toUpperCase()}

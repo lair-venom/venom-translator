@@ -62,7 +62,7 @@ export const Notification: React.FC<NotificationProps> = ({ notification, onClos
   };
 
   return (
-    <div className={`glass rounded-lg border-l-4 ${getBorderColor()} p-4 shadow-lg max-w-sm w-full transition-all duration-500 ${
+    <div className={`glass-border rounded-lg border-l-4 ${getBorderColor()} p-4 shadow-lg max-w-sm w-full transition-all duration-500 ${
       isExiting ? 'animate-slide-out-right' : 'animate-slide-in-right'
     }`}>
       <div className="flex items-start">
