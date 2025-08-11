@@ -88,7 +88,7 @@ export const LanguageSelect: React.FC<LanguageSelectProps> = ({
         <div className="absolute top-full left-0 right-0 mt-2 z-50 animate-slide-down">
           <div className="glass-border rounded-xl shadow-2xl overflow-hidden max-h-80">
             {/* Search Input */}
-            <div className="p-3 border-b border-orange-400 border-opacity-20">
+            <div className="p-3 border-b border-gray-700">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
@@ -111,7 +111,7 @@ export const LanguageSelect: React.FC<LanguageSelectProps> = ({
                     type="button"
                     onClick={() => handleSelect(lang.code)}
                     className={`w-full px-4 py-3 text-left hover:bg-orange-400 hover:bg-opacity-10 transition-all flex items-center space-x-3 group ${
-                      value === lang.code ? 'bg-orange-400 bg-opacity-20 border-r-2 border-orange-400' : ''
+                      value === lang.code ? 'bg-orange-400 bg-opacity-10 border-r-2 border-orange-500' : ''
                     }`}
                   >
                     <span className="text-2xl group-hover:scale-110 transition-transform">
