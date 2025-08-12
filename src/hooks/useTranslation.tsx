@@ -26,7 +26,12 @@ export const useTranslation = () => {
       // Определяем исходный язык, если установлен auto
       let detectedFromLang = fromLang;
       if (fromLang === 'auto') {
-        detectedFromLang = await TranslationService.detectLanguage(text);
+        try {
+          detectedFromLang = await TranslationService.detectLanguage(text);
+        } catch (error) {
+          console.warn('Language detection failed, using English as fallback');
+          detectedFromLang = 'en';
+        }
       }
       
       // Переводим текст
@@ -68,7 +73,12 @@ export const useTranslation = () => {
       // Определяем язык извлеченного текста
       let detectedFromLang = fromLang;
       if (fromLang === 'auto') {
-        detectedFromLang = await TranslationService.detectLanguage(extractedText);
+        try {
+          detectedFromLang = await TranslationService.detectLanguage(extractedText);
+        } catch (error) {
+          console.warn('Language detection failed for image text, using English as fallback');
+          detectedFromLang = 'en';
+        }
       }
       
       // Переводим извлеченный текст

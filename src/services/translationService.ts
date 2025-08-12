@@ -1,8 +1,9 @@
-// Enhanced translation service with better text handling
+// Улучшенный сервис перевода с поддержкой многострочного текста
 export class TranslationService {
-  private static readonly LIBRE_TRANSLATE_URL = 'https://libretranslate.de/translate';
-  private static readonly MYMEMORY_URL = 'https://api.mymemory.translated.net/get';
-  private static readonly GOOGLE_TRANSLATE_URL = 'https://translate.googleapis.com/translate_a/single';
+  private static readonly GOOGLE_TRANSLATE_API = 'https://translate.googleapis.com/translate_a/single';
+  private static readonly MYMEMORY_API = 'https://api.mymemory.translated.net/get';
+  private static readonly LIBRE_TRANSLATE_API = 'https://libretranslate.de/translate';
+  private static readonly YANDEX_PROXY = 'https://translate.yandex.net/api/v1.5/tr.json/translate';
 
   static async translateText(text: string, fromLang: string, toLang: string): Promise<string> {
     // Если языки одинаковые, возвращаем исходный текст
@@ -10,7 +11,6 @@ export class TranslationService {
       return text;
     }
 
-    // Сохраняем оригинальное форматирование
     const originalText = text;
     const trimmedText = text.trim();
     
@@ -22,104 +22,100 @@ export class TranslationService {
     const normalizedFromLang = this.normalizeLanguageCode(fromLang);
     const normalizedToLang = this.normalizeLanguageCode(toLang);
 
+    // Разбиваем текст на части для лучшего перевода
+    const textParts = this.splitTextForTranslation(trimmedText);
+    const translatedParts: string[] = [];
+
+    for (const part of textParts) {
+      if (!part.trim()) {
+        translatedParts.push(part);
+        continue;
+      }
+
+      let translatedPart = await this.translateSinglePart(part.trim(), normalizedFromLang, normalizedToLang);
+      translatedParts.push(translatedPart);
+    }
+
+    const result = translatedParts.join('');
+    return this.preserveOriginalFormatting(originalText, trimmedText, result);
+  }
+
+  private static splitTextForTranslation(text: string): string[] {
+    // Разбиваем текст на предложения, сохраняя разделители
+    const sentences = text.split(/([.!?]+\s*)/);
+    const parts: string[] = [];
+    
+    for (let i = 0; i < sentences.length; i += 2) {
+      const sentence = sentences[i] || '';
+      const delimiter = sentences[i + 1] || '';
+      
+      if (sentence.trim()) {
+        parts.push(sentence + delimiter);
+      } else if (delimiter) {
+        parts.push(delimiter);
+      }
+    }
+    
+    return parts.length > 0 ? parts : [text];
+  }
+
+  private static async translateSinglePart(text: string, fromLang: string, toLang: string): Promise<string> {
+    // Пробуем Google Translate (наиболее надежный)
     try {
-      // Пробуем Google Translate (неофициальный API)
-      const googleResult = await this.tryGoogleTranslate(trimmedText, normalizedFromLang, normalizedToLang);
-      if (googleResult && googleResult !== trimmedText) {
-        return this.preserveFormatting(originalText, trimmedText, googleResult);
+      const googleResult = await this.tryGoogleTranslate(text, fromLang, toLang);
+      if (googleResult && googleResult.trim() && googleResult !== text) {
+        return googleResult;
       }
     } catch (error) {
       console.warn('Google Translate failed:', error);
     }
 
+    // Пробуем MyMemory (хорошее качество)
     try {
-      // Пробуем MyMemory API с улучшенными параметрами
-      const response = await fetch(
-        `${this.MYMEMORY_URL}?q=${encodeURIComponent(trimmedText)}&langpair=${normalizedFromLang}|${normalizedToLang}&de=example@email.com`
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.responseStatus === 200 && data.responseData?.translatedText) {
-          const translated = data.responseData.translatedText;
-          // Проверяем качество перевода
-          if (translated.toLowerCase() !== trimmedText.toLowerCase() && 
-              !translated.includes('MYMEMORY WARNING') &&
-              translated.length > 0) {
-            return this.preserveFormatting(originalText, trimmedText, translated);
-          }
-        }
+      const myMemoryResult = await this.tryMyMemoryTranslate(text, fromLang, toLang);
+      if (myMemoryResult && myMemoryResult.trim() && myMemoryResult !== text) {
+        return myMemoryResult;
       }
     } catch (error) {
-      console.warn('MyMemory API failed:', error);
+      console.warn('MyMemory failed:', error);
     }
 
+    // Пробуем LibreTranslate (fallback)
     try {
-      // Fallback к LibreTranslate с улучшенными параметрами
-      const response = await fetch(this.LIBRE_TRANSLATE_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          q: trimmedText,
-          source: normalizedFromLang === 'auto' ? 'auto' : normalizedFromLang,
-          target: normalizedToLang,
-          format: 'text',
-          alternatives: 3
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.translatedText && data.translatedText !== trimmedText) {
-          return this.preserveFormatting(originalText, trimmedText, data.translatedText);
-        }
+      const libreResult = await this.tryLibreTranslate(text, fromLang, toLang);
+      if (libreResult && libreResult.trim() && libreResult !== text) {
+        return libreResult;
       }
     } catch (error) {
-      console.warn('LibreTranslate API failed:', error);
+      console.warn('LibreTranslate failed:', error);
     }
 
-    // Если все API недоступны, используем улучшенный словарь
-    const dictionaryResult = this.dictionaryTranslation(trimmedText, normalizedFromLang, normalizedToLang);
-    return this.preserveFormatting(originalText, trimmedText, dictionaryResult);
-  }
-
-  private static preserveFormatting(originalText: string, trimmedText: string, translatedText: string): string {
-    // Сохраняем начальные и конечные пробелы
-    const leadingSpaces = originalText.match(/^\s*/)?.[0] || '';
-    const trailingSpaces = originalText.match(/\s*$/)?.[0] || '';
-    
-    // Сохраняем структуру абзацев
-    if (originalText.includes('\n')) {
-      const lines = originalText.split('\n');
-      const translatedLines = translatedText.split(/[.!?]+/).filter(s => s.trim());
-      
-      if (translatedLines.length >= lines.length) {
-        return lines.map((line, index) => {
-          if (line.trim() === '') return line;
-          return translatedLines[index]?.trim() || line;
-        }).join('\n');
-      }
-    }
-    
-    return leadingSpaces + translatedText.trim() + trailingSpaces;
+    // Если все API недоступны, используем словарь
+    return this.dictionaryTranslation(text, fromLang, toLang);
   }
 
   private static async tryGoogleTranslate(text: string, fromLang: string, toLang: string): Promise<string | null> {
     try {
-      const url = `${this.GOOGLE_TRANSLATE_URL}?client=gtx&sl=${fromLang}&tl=${toLang}&dt=t&q=${encodeURIComponent(text)}`;
-      
-      const response = await fetch(url, {
+      const params = new URLSearchParams({
+        client: 'gtx',
+        sl: fromLang === 'auto' ? 'auto' : fromLang,
+        tl: toLang,
+        dt: 't',
+        q: text
+      });
+
+      const response = await fetch(`${this.GOOGLE_TRANSLATE_API}?${params}`, {
+        method: 'GET',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
       });
       
       if (response.ok) {
         const data = await response.json();
-        if (data && data[0] && data[0][0] && data[0][0][0]) {
-          return data[0][0][0];
+        if (data && data[0] && Array.isArray(data[0])) {
+          const translatedText = data[0].map((item: any) => item[0]).join('');
+          return translatedText;
         }
       }
     } catch (error) {
@@ -128,36 +124,127 @@ export class TranslationService {
     return null;
   }
 
-  static async detectLanguage(text: string): Promise<string> {
-    const trimmedText = text.trim();
-    
+  private static async tryMyMemoryTranslate(text: string, fromLang: string, toLang: string): Promise<string | null> {
     try {
-      // Пробуем LibreTranslate для определения языка
-      const response = await fetch('https://libretranslate.de/detect', {
+      const params = new URLSearchParams({
+        q: text,
+        langpair: `${fromLang}|${toLang}`,
+        de: 'translator@example.com'
+      });
+
+      const response = await fetch(`${this.MYMEMORY_API}?${params}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.responseStatus === 200 && data.responseData?.translatedText) {
+          const translated = data.responseData.translatedText;
+          if (!translated.includes('MYMEMORY WARNING') && 
+              translated.toLowerCase() !== text.toLowerCase()) {
+            return translated;
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('MyMemory error:', error);
+    }
+    return null;
+  }
+
+  private static async tryLibreTranslate(text: string, fromLang: string, toLang: string): Promise<string | null> {
+    try {
+      const response = await fetch(this.LIBRE_TRANSLATE_API, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          q: trimmedText
+          q: text,
+          source: fromLang === 'auto' ? 'auto' : fromLang,
+          target: toLang,
+          format: 'text'
         })
       });
 
       if (response.ok) {
         const data = await response.json();
-        if (data && data[0] && data[0].language && data[0].confidence > 0.5) {
-          return data[0].language;
+        if (data.translatedText && data.translatedText !== text) {
+          return data.translatedText;
+        }
+      }
+    } catch (error) {
+      console.warn('LibreTranslate error:', error);
+    }
+    return null;
+  }
+
+  private static preserveOriginalFormatting(originalText: string, trimmedText: string, translatedText: string): string {
+    // Сохраняем начальные и конечные пробелы
+    const leadingWhitespace = originalText.match(/^\s*/)?.[0] || '';
+    const trailingWhitespace = originalText.match(/\s*$/)?.[0] || '';
+    
+    // Если исходный текст содержит переносы строк, сохраняем их структуру
+    if (originalText.includes('\n')) {
+      const originalLines = originalText.split('\n');
+      const translatedLines = translatedText.split(/[.!?]+/).filter(s => s.trim());
+      
+      // Пытаемся сопоставить переводы с исходными строками
+      const result: string[] = [];
+      let translatedIndex = 0;
+      
+      for (const originalLine of originalLines) {
+        if (originalLine.trim() === '') {
+          result.push(originalLine); // Сохраняем пустые строки
+        } else if (translatedIndex < translatedLines.length) {
+          const translated = translatedLines[translatedIndex]?.trim() || originalLine;
+          // Сохраняем отступы исходной строки
+          const lineIndent = originalLine.match(/^\s*/)?.[0] || '';
+          result.push(lineIndent + translated);
+          translatedIndex++;
+        } else {
+          result.push(originalLine);
+        }
+      }
+      
+      return result.join('\n');
+    }
+    
+    return leadingWhitespace + translatedText.trim() + trailingWhitespace;
+  }
+
+  static async detectLanguage(text: string): Promise<string> {
+    const trimmedText = text.trim();
+    
+    // Пробуем определить язык через Google
+    try {
+      const params = new URLSearchParams({
+        client: 'gtx',
+        sl: 'auto',
+        tl: 'en',
+        dt: 't',
+        q: trimmedText.substring(0, 100) // Берем первые 100 символов
+      });
+
+      const response = await fetch(`${this.GOOGLE_TRANSLATE_API}?${params}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data[2]) {
+          return data[2]; // Определенный язык
         }
       }
     } catch (error) {
       console.warn('Language detection failed:', error);
     }
 
-    // Улучшенное определение языка по символам
-    return this.advancedLanguageDetection(trimmedText);
+    // Fallback к локальному определению
+    return this.detectLanguageLocally(trimmedText);
   }
 
-  private static advancedLanguageDetection(text: string): string {
+  private static detectLanguageLocally(text: string): string {
     const lowerText = text.toLowerCase();
     
     // Подсчитываем символы разных языков
@@ -168,7 +255,9 @@ export class TranslationService {
     const koreanCount = (text.match(/[가-힣]/gi) || []).length;
     const arabicCount = (text.match(/[ء-ي]/gi) || []).length;
     
-    const totalChars = text.length;
+    const totalChars = text.replace(/\s/g, '').length;
+    
+    if (totalChars === 0) return 'en';
     
     // Определяем язык по преобладающим символам
     if (cyrillicCount / totalChars > 0.3) return 'ru';
@@ -177,7 +266,7 @@ export class TranslationService {
     if (koreanCount / totalChars > 0.3) return 'ko';
     if (arabicCount / totalChars > 0.3) return 'ar';
     
-    // Проверяем специфичные символы европейских языков
+    // Проверяем специфичные символы
     if (/[äöüß]/i.test(text)) return 'de';
     if (/[àâäéèêëïîôöùûüÿç]/i.test(text)) return 'fr';
     if (/[áéíóúñü¿¡]/i.test(text)) return 'es';
@@ -186,14 +275,14 @@ export class TranslationService {
     
     // Проверяем по ключевым словам
     const commonWords = {
-      'ru': ['и', 'в', 'не', 'на', 'я', 'быть', 'он', 'с', 'что', 'а', 'по', 'это', 'она', 'этот', 'к', 'но', 'они', 'мы', 'как', 'из'],
-      'en': ['the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'i', 'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at'],
-      'es': ['el', 'la', 'de', 'que', 'y', 'a', 'en', 'un', 'ser', 'se', 'no', 'te', 'lo', 'le', 'da', 'su', 'por', 'son', 'con', 'para'],
-      'fr': ['le', 'de', 'et', 'à', 'un', 'il', 'être', 'et', 'en', 'avoir', 'que', 'pour', 'dans', 'ce', 'son', 'une', 'sur', 'avec', 'ne', 'se'],
-      'de': ['der', 'die', 'und', 'in', 'den', 'von', 'zu', 'das', 'mit', 'sich', 'des', 'auf', 'für', 'ist', 'im', 'dem', 'nicht', 'ein', 'eine', 'als']
+      'ru': ['и', 'в', 'не', 'на', 'я', 'быть', 'он', 'с', 'что', 'а', 'по', 'это', 'она', 'этот', 'к', 'но', 'они', 'мы', 'как', 'из', 'за', 'от', 'до', 'при', 'для'],
+      'en': ['the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'i', 'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at', 'this', 'but', 'his', 'by', 'from'],
+      'es': ['el', 'la', 'de', 'que', 'y', 'a', 'en', 'un', 'ser', 'se', 'no', 'te', 'lo', 'le', 'da', 'su', 'por', 'son', 'con', 'para', 'una', 'del', 'los', 'al', 'todo'],
+      'fr': ['le', 'de', 'et', 'à', 'un', 'il', 'être', 'et', 'en', 'avoir', 'que', 'pour', 'dans', 'ce', 'son', 'une', 'sur', 'avec', 'ne', 'se', 'pas', 'tout', 'plus', 'par', 'grand'],
+      'de': ['der', 'die', 'und', 'in', 'den', 'von', 'zu', 'das', 'mit', 'sich', 'des', 'auf', 'für', 'ist', 'im', 'dem', 'nicht', 'ein', 'eine', 'als', 'auch', 'nach', 'wird', 'an', 'werden']
     };
     
-    const words = lowerText.split(/\s+/);
+    const words = lowerText.split(/\s+/).filter(word => word.length > 1);
     let maxMatches = 0;
     let detectedLang = 'en';
     
@@ -218,7 +307,7 @@ export class TranslationService {
       'de': 'de',
       'it': 'it',
       'pt': 'pt',
-      'zh': 'zh-cn',
+      'zh': 'zh',
       'ja': 'ja',
       'ko': 'ko',
       'ar': 'ar',
@@ -237,7 +326,7 @@ export class TranslationService {
 
   private static dictionaryTranslation(text: string, fromLang: string, toLang: string): string {
     const translations: Record<string, Record<string, string>> = {
-      // Расширенный словарь переводов
+      // Базовые фразы
       'hello': { 'ru': 'привет', 'es': 'hola', 'fr': 'bonjour', 'de': 'hallo', 'it': 'ciao' },
       'world': { 'ru': 'мир', 'es': 'mundo', 'fr': 'monde', 'de': 'welt', 'it': 'mondo' },
       'goodbye': { 'ru': 'до свидания', 'es': 'adiós', 'fr': 'au revoir', 'de': 'auf wiedersehen', 'it': 'arrivederci' },
@@ -245,29 +334,13 @@ export class TranslationService {
       'yes': { 'ru': 'да', 'es': 'sí', 'fr': 'oui', 'de': 'ja', 'it': 'sì' },
       'no': { 'ru': 'нет', 'es': 'no', 'fr': 'non', 'de': 'nein', 'it': 'no' },
       'please': { 'ru': 'пожалуйста', 'es': 'por favor', 'fr': 's\'il vous plaît', 'de': 'bitte', 'it': 'per favore' },
-      'sorry': { 'ru': 'извините', 'es': 'lo siento', 'fr': 'désolé', 'de': 'entschuldigung', 'it': 'scusa' },
-      'good morning': { 'ru': 'доброе утро', 'es': 'buenos días', 'fr': 'bonjour', 'de': 'guten morgen', 'it': 'buongiorno' },
-      'good evening': { 'ru': 'добрый вечер', 'es': 'buenas tardes', 'fr': 'bonsoir', 'de': 'guten abend', 'it': 'buonasera' },
-      'how are you': { 'ru': 'как дела', 'es': 'cómo estás', 'fr': 'comment allez-vous', 'de': 'wie geht es dir', 'it': 'come stai' },
-      'what is your name': { 'ru': 'как вас зовут', 'es': 'cómo te llamas', 'fr': 'comment vous appelez-vous', 'de': 'wie heißt du', 'it': 'come ti chiami' },
-      'i love you': { 'ru': 'я люблю тебя', 'es': 'te amo', 'fr': 'je t\'aime', 'de': 'ich liebe dich', 'it': 'ti amo' },
-      'help': { 'ru': 'помощь', 'es': 'ayuda', 'fr': 'aide', 'de': 'hilfe', 'it': 'aiuto' },
-      'water': { 'ru': 'вода', 'es': 'agua', 'fr': 'eau', 'de': 'wasser', 'it': 'acqua' },
-      'food': { 'ru': 'еда', 'es': 'comida', 'fr': 'nourriture', 'de': 'essen', 'it': 'cibo' },
-      'house': { 'ru': 'дом', 'es': 'casa', 'fr': 'maison', 'de': 'haus', 'it': 'casa' },
-      'car': { 'ru': 'машина', 'es': 'coche', 'fr': 'voiture', 'de': 'auto', 'it': 'macchina' },
-      'book': { 'ru': 'книга', 'es': 'libro', 'fr': 'livre', 'de': 'buch', 'it': 'libro' },
-      'computer': { 'ru': 'компьютер', 'es': 'computadora', 'fr': 'ordinateur', 'de': 'computer', 'it': 'computer' },
       
       // Обратные переводы
       'привет': { 'en': 'hello', 'es': 'hola', 'fr': 'bonjour', 'de': 'hallo', 'it': 'ciao' },
       'мир': { 'en': 'world', 'es': 'mundo', 'fr': 'monde', 'de': 'welt', 'it': 'mondo' },
-      'до свидания': { 'en': 'goodbye', 'es': 'adiós', 'fr': 'au revoir', 'de': 'auf wiedersehen', 'it': 'arrivederci' },
       'спасибо': { 'en': 'thank you', 'es': 'gracias', 'fr': 'merci', 'de': 'danke', 'it': 'grazie' },
       'да': { 'en': 'yes', 'es': 'sí', 'fr': 'oui', 'de': 'ja', 'it': 'sì' },
-      'нет': { 'en': 'no', 'es': 'no', 'fr': 'non', 'de': 'nein', 'it': 'no' },
-      'пожалуйста': { 'en': 'please', 'es': 'por favor', 'fr': 's\'il vous plaît', 'de': 'bitte', 'it': 'per favore' },
-      'извините': { 'en': 'sorry', 'es': 'lo siento', 'fr': 'désolé', 'de': 'entschuldigung', 'it': 'scusa' }
+      'нет': { 'en': 'no', 'es': 'no', 'fr': 'non', 'de': 'nein', 'it': 'no' }
     };
 
     const lowerText = text.toLowerCase().trim();
@@ -276,13 +349,6 @@ export class TranslationService {
     const translation = translations[lowerText]?.[toLang];
     if (translation) {
       return translation;
-    }
-
-    // Проверяем частичные совпадения для фраз
-    for (const [phrase, translationMap] of Object.entries(translations)) {
-      if (lowerText.includes(phrase) && translationMap[toLang]) {
-        return lowerText.replace(phrase, translationMap[toLang]);
-      }
     }
 
     // Если перевод не найден, возвращаем исходный текст
