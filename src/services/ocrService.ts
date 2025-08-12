@@ -3,14 +3,14 @@ import Tesseract from 'tesseract.js';
 export class OCRService {
   static async extractTextFromImage(imageFile: File): Promise<string> {
     try {
-      console.log('Starting enhanced OCR processing...');
+      console.log('Starting advanced OCR processing...');
       
       // Предварительная обработка изображения для лучшего распознавания
       const processedImage = await this.preprocessImage(imageFile);
       
       const { data: { text } } = await Tesseract.recognize(
         processedImage,
-        'eng+rus+spa+fra+deu+ita+por+chi_sim+jpn+kor+ara+hin+tur+nld+swe+dan+nor+fin+pol',
+        'eng+rus+spa+fra+deu+ita+por+chi_sim+jpn+kor+ara+hin+tur+nld+swe+dan+nor+fin+pol+ukr+bel+ces+slk+hun+ron+bul+hrv+srp+slv+est+lav+lit',
         {
           logger: m => {
             if (m.status === 'recognizing text') {
@@ -19,8 +19,7 @@ export class OCRService {
           },
           tessedit_pageseg_mode: Tesseract.PSM.AUTO,
           tessedit_ocr_engine_mode: Tesseract.OEM.LSTM_ONLY,
-          preserve_interword_spaces: '1',
-          tessedit_char_whitelist: undefined, // Разрешаем все символы
+          preserve_interword_spaces: '1'
         }
       );
       
@@ -28,7 +27,7 @@ export class OCRService {
       const cleanText = this.cleanExtractedText(text);
       
       if (!cleanText || cleanText.length < 2) {
-        throw new Error('Не удалось распознать текст на изображении. Попробуйте изображение с более четким текстом.');
+        throw new Error('Текст на изображении не обнаружен. Убедитесь, что изображение содержит четкий текст.');
       }
       
       console.log('OCR completed successfully:', cleanText);
@@ -107,25 +106,33 @@ export class OCRService {
   private static cleanExtractedText(text: string): string {
     if (!text) return '';
     
-    // Сохраняем структуру, но очищаем от мусора
+    // Улучшенная очистка с сохранением структуры
     let cleaned = text
-      // Убираем лишние пробелы, но сохраняем переносы строк
+      // Нормализуем пробелы и табуляции
       .replace(/[ \t]+/g, ' ')
-      // Убираем множественные переносы строк
+      // Убираем лишние переносы строк
       .replace(/\n{3,}/g, '\n\n')
-      // Убираем пробелы в начале и конце строк
+      // Очищаем строки от лишних пробелов
       .split('\n')
       .map(line => line.trim())
+      .filter(line => line.length > 0 || line === '') // Сохраняем пустые строки для структуры
       .join('\n')
-      // Убираем пустые строки в начале и конце
       .trim();
     
-    // Убираем очевидный мусор OCR
+    // Убираем артефакты OCR
     cleaned = cleaned
-      .replace(/[|\\\/\[\]{}()<>]/g, '') // Убираем символы, часто неправильно распознаваемые
-      .replace(/\s+([.,:;!?])/g, '$1') // Убираем пробелы перед знаками препинания
-      .replace(/([.,:;!?])\s*([.,:;!?])/g, '$1 $2') // Нормализуем знаки препинания
-      .replace(/\s{2,}/g, ' '); // Убираем множественные пробелы
+      // Убираем очевидные артефакты
+      .replace(/[|\\\/\[\]{}()<>_~`]/g, '')
+      // Исправляем пунктуацию
+      .replace(/\s+([.,:;!?])/g, '$1')
+      .replace(/([.,:;!?])\s*([.,:;!?])/g, '$1 $2')
+      // Убираем множественные пробелы
+      .replace(/\s{2,}/g, ' ')
+      // Исправляем распространенные ошибки OCR
+      .replace(/\b0\b/g, 'O') // Ноль вместо буквы O
+      .replace(/\b1\b/g, 'I') // Единица вместо буквы I
+      .replace(/rn/g, 'm') // rn часто распознается вместо m
+      .replace(/\|/g, 'l'); // Вертикальная черта вместо l
     
     return cleaned;
   }
